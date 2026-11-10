@@ -36,10 +36,9 @@ class SettingsActivity : ComponentActivity() {
 
 @Composable
 fun SettingsScreen(phrase: String) {
-    // sticky note for the slider position (starts in the middle)
-    val sensitivity = remember { mutableStateOf(5f) }
-    // sticky note for the checkbox (starts ticked off)
-    val keepHistory = remember { mutableStateOf(false) }
+    val sensitivity =
+        remember { mutableStateOf(5f) } //starts the slider at the middle and remebers where the slider it
+    val keepHistory = remember { mutableStateOf(false) } //remebers if checkbox is checked
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -55,29 +54,33 @@ fun SettingsScreen(phrase: String) {
             HorizontalDivider()
 
             Text("Shake sensitivity")
-            // slider from 1 to 10, moving in whole steps
+            // slider moves in whole numbers and saved in sensitivity
             Slider(
                 value = sensitivity.value,
                 onValueChange = { sensitivity.value = it },
                 valueRange = 1f..10f,
                 steps = 8
             )
+            //shows slider number and turns decimal to whole number
             Text("Value: ${sensitivity.value.toInt()}")
 
             HorizontalDivider()
 
-            // checkbox and its label side by side
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) { //box and label side by side
                 Checkbox(
                     checked = keepHistory.value,
-                    onCheckedChange = { keepHistory.value = it }
+                    onCheckedChange = {
+                        keepHistory.value = it
+                    } //ticked = true and saved in keepHistory
                 )
                 Text("Keep a history")
             }
         }
     }
 }
-
+//controls dont do anything yet
+//In Milestone 2 slider will connect to shake sensor
+//In Milestone 3 'Keep a history' will use saved data
 @Preview(showBackground = true)
 @Composable
 fun SettingsScreenPreview() {

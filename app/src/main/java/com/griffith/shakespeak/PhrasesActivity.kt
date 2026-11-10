@@ -28,9 +28,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+//opens the envelope home sent
 class PhrasesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        //deals with null sends back 'no phrases'
         val phrase = intent.getStringExtra(EXTRA_PHRASE) ?: "No phrase"
         setContent {
             PhrasesScreen(phrase)
@@ -40,9 +42,11 @@ class PhrasesActivity : ComponentActivity() {
 
 @Composable
 fun PhrasesScreen(phrase: String) {
-    val typedText = remember { mutableStateOf("") }
-    val phrases = remember { mutableStateListOf("I need help") }
-    val context = LocalContext.current
+    val typedText = remember { mutableStateOf("") } //for remebering what the user is typing
+
+    val phrases = remember { mutableStateListOf("I need help") } //the list of phrases
+    val context = LocalContext.current // this is to open share and 'No apps found'
+
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -55,42 +59,45 @@ fun PhrasesScreen(phrase: String) {
             Text("Phrases", fontSize = 28.sp, fontWeight = FontWeight.Bold)
             Text("Current phrase: $phrase")
 
+            //Text box
             TextField(
                 value = typedText.value,
-                onValueChange = { typedText.value = it },
+                onValueChange = { typedText.value = it },// new text value is "it " and gets saved on typedText
                 label = { Text("Type a phrase") },
                 modifier = Modifier.fillMaxWidth()
             )
 
+            //Add button
             Button(onClick = {
-                if (typedText.value.isNotBlank()) {
-                    phrases.add(typedText.value.trim())
-                    typedText.value = ""
+                if (typedText.value.isNotBlank()) { //only adds if something is typed
+                    phrases.add(typedText.value.trim())//adds and removes any extra space at the end
+                    typedText.value = "" //clears the box after adding
                 }
             }) {
                 Text("Add phrase")
             }
 
+            //Share Button
             Button(onClick = {
-                // implicit intent: we say WHAT to do (send text), not WHICH app
+                // implicit intent says what to do , not WHICH app (send text)
                 val sendIntent = Intent(Intent.ACTION_SEND)
                 sendIntent.type = "text/plain"
                 sendIntent.putExtra(Intent.EXTRA_TEXT, phrase)
-                // the chooser shows the user a menu of apps that can send text
+                // chooser shows the user a selection of apps that can send text to
                 val chooser = Intent.createChooser(sendIntent, "Share phrase with")
                 try {
                     context.startActivity(chooser)
                 } catch (e: ActivityNotFoundException) {
-                    // no app could handle it, so show a short message instead of crashing
+                    // exception handling show a short message instead of crashing
                     Toast.makeText(context, "No app found to share with", Toast.LENGTH_SHORT).show()
                 }
             }) {
                 Text("Share phrase")
             }
-
+            //divider between sections
             HorizontalDivider()
 
-            for (item in phrases) {
+            for (item in phrases) { //a line of text for every phrase
                 Text("- $item")
             }
         }

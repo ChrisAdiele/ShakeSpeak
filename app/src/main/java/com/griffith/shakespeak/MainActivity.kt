@@ -26,9 +26,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// the name written on the envelope; both sides use this same name
+// named the label on the envelope Phrases
+//home screen and other screens use the same name so phrases doesnt get lost
 const val EXTRA_PHRASE = "phrase"
 
+//the class runs the home and says what to draw(this case the home screen )
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,17 +42,20 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun HomeScreen() {
+    //remember the on and off and redraws screen when its changed
     val shakeOn = remember { mutableStateOf(true) }
-    val activePhrase = "I need help"
-    // the context is needed to open another screen
-    val context = LocalContext.current
+    val activePhrase = "I need help" // word to be spoken
+    val context = LocalContext.current // this is to open another screen
 
+    //background styling
     Surface(modifier = Modifier.fillMaxSize()) {
+        //top to bottom styling
         Column(
             modifier = Modifier
+
                 .fillMaxSize()
-                .statusBarsPadding()
-                .padding(24.dp),
+                .statusBarsPadding() //keeps the content below the clock and battery bar
+                .padding(24.dp), //space around the edges
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
@@ -58,6 +63,7 @@ fun HomeScreen() {
             Text("Active phrase:")
             Text("\"$activePhrase\"", fontSize = 24.sp)
 
+            //this puts the label and on and off switch side by side
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -66,16 +72,16 @@ fun HomeScreen() {
                 Text("Shake detection")
                 Switch(
                     checked = shakeOn.value,
-                    onCheckedChange = { shakeOn.value = it }
+                    onCheckedChange = { shakeOn.value = it }// new on and off switch value is "it " and gets saved on shakeOn
                 )
             }
-
+            //Speak now button
             Button(onClick = { }) {
                 Text("Speak now")
             }
-
+            //  Phrases  button
             Button(onClick = {
-                // explicit intent: names the exact screen to open
+                //  explicit intent names the exact screen to open
                 val intent = Intent(context, PhrasesActivity::class.java)
                 intent.putExtra(EXTRA_PHRASE, activePhrase)  // put the phrase in the envelope
                 context.startActivity(intent)
@@ -83,7 +89,9 @@ fun HomeScreen() {
                 Text("Phrases")
             }
 
+            //Settings button
             Button(onClick = {
+                //  explicit intent names the exact screen to open
                 val intent = Intent(context, SettingsActivity::class.java)
                 intent.putExtra(EXTRA_PHRASE, activePhrase)
                 context.startActivity(intent)
@@ -94,7 +102,7 @@ fun HomeScreen() {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true) // allows to show screen in the design view tab without the emulator
 @Composable
 fun HomeScreenPreview() {
     HomeScreen()
