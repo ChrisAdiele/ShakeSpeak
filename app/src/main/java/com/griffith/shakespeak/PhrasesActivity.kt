@@ -3,6 +3,7 @@ package com.griffith.shakespeak
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -16,24 +17,26 @@ import androidx.compose.ui.unit.dp
 class PhrasesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // open the envelope; if it is empty (null), use a default
+        val phrase = intent.getStringExtra(EXTRA_PHRASE) ?: "No phrase"
         setContent {
-            PhrasesScreen()
+            PhrasesScreen(phrase)
         }
     }
 }
 
 @Composable
-fun PhrasesScreen() {
+fun PhrasesScreen(phrase: String) {
     Surface(modifier = Modifier.fillMaxSize()) {
-        Text(
-            "Phrases screen",
-            modifier = Modifier.statusBarsPadding().padding(24.dp)
-        )
+        Column(modifier = Modifier.statusBarsPadding().padding(24.dp)) {
+            Text("Phrases screen")
+            Text("Current phrase: $phrase")
+        }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun PhrasesScreenPreview() {
-    PhrasesScreen()
+    PhrasesScreen("I need help")
 }
