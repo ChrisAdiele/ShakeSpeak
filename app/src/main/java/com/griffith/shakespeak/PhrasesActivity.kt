@@ -1,6 +1,9 @@
 package com.griffith.shakespeak
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +22,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,10 +40,9 @@ class PhrasesActivity : ComponentActivity() {
 
 @Composable
 fun PhrasesScreen(phrase: String) {
-    // sticky note for what the user is typing right now
     val typedText = remember { mutableStateOf("") }
-    // sticky note for the whole list of saved phrases
     val phrases = remember { mutableStateListOf("I need help") }
+    val context = LocalContext.current
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -52,7 +55,6 @@ fun PhrasesScreen(phrase: String) {
             Text("Phrases", fontSize = 28.sp, fontWeight = FontWeight.Bold)
             Text("Current phrase: $phrase")
 
-            // box where the user types a new phrase
             TextField(
                 value = typedText.value,
                 onValueChange = { typedText.value = it },
@@ -61,18 +63,33 @@ fun PhrasesScreen(phrase: String) {
             )
 
             Button(onClick = {
-                // only add if something was typed
                 if (typedText.value.isNotBlank()) {
                     phrases.add(typedText.value.trim())
-                    typedText.value = ""   // clear the box
+                    typedText.value = ""
                 }
             }) {
                 Text("Add phrase")
             }
 
+            Button(onClick = {
+                // implicit intent: we say WHAT to do (send text), not WHICH app
+                val sendIntent = Intent(Intent.ACTION_SEND)
+                sendIntent.type = "text/plain"
+                sendIntent.putExtra(Intent.EXTRA_TEXT, phrase)
+                // the chooser shows the user a menu of apps that can send text
+                val chooser = Intent.createChooser(sendIntent, "Share phrase with")
+                try {
+                    context.startActivity(chooser)
+                } catch (e: ActivityNotFoundException) {
+                    // no app could handle it, so show a short message instead of crashing
+                    Toast.makeText(context, "No app found to share with", Toast.LENGTH_SHORT).show()
+                }
+            }) {
+                Text("Share phrase")
+            }
+
             HorizontalDivider()
 
-            // one Text for every saved phrase
             for (item in phrases) {
                 Text("- $item")
             }
