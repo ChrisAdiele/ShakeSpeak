@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">ShakeSpeak</string>
+    <string name="title_activity_phrases">PhrasesActivity</string>
+    <string name="title_activity_settings">SettingsActivity</string>
 </resources>
