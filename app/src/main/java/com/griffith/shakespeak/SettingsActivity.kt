@@ -78,8 +78,8 @@ fun SettingsScreen(phrase: String) {
         }
     }
 }
-//controls dont do anything yet
 //In Milestone 2 slider will connect to shake sensor
+//controls dont do anything yet
 //In Milestone 3 'Keep a history' will use saved data
 @Preview(showBackground = true)
 @Composable
