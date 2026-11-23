@@ -1,5 +1,9 @@
 package com.griffith.shakespeak
 
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import kotlin.math.sqrt
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -46,6 +50,12 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private val y = mutableStateOf(0f)
     private val z = mutableStateOf(0f)
     private val sensorAvailable = mutableStateOf(true)
+    // shake settings and state (Step 2)
+    private val shakeOn = mutableStateOf(true)
+    private val shakeDetected = mutableStateOf(false)
+    private var lastShakeTime = 0L
+    private val shakeThreshold = 20f
+    private val cooldownMs = 2000L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +67,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         }
 
         setContent {
-            HomeScreen(x.value, y.value, z.value, sensorAvailable.value)
+            HomeScreen(
+                x.value, y.value, z.value, sensorAvailable.value,
+                shakeOn.value, { shakeOn.value = it }, shakeDetected.value
+            )
         }
     }
 
@@ -78,6 +91,18 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             x.value = event.values[0]
             y.value = event.values[1]
             z.value = event.values[2]
+
+            // strength = how hard the phone is being pushed (gravity included)
+            val strength = sqrt(x.value * x.value + y.value * y.value + z.value * z.value)
+            val now = SystemClock.elapsedRealtime()
+
+            // shake only counts if: strong enough, cooldown over, and switch is ON
+            if (shakeOn.value && strength > shakeThreshold && now - lastShakeTime > cooldownMs) {
+                lastShakeTime = now
+                shakeDetected.value = true
+                // hide the message again after 1 second
+                Handler(Looper.getMainLooper()).postDelayed({ shakeDetected.value = false }, 1000)
+            }
         }
     }
 
@@ -87,9 +112,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 }
 
 @Composable
-fun HomeScreen(x: Float, y: Float, z: Float, sensorAvailable: Boolean)  {
-    //remember the on and off and redraws screen when its changed
-    val shakeOn = remember { mutableStateOf(true) }
+fun HomeScreen(
+    x: Float, y: Float, z: Float, sensorAvailable: Boolean,
+    shakeOn: Boolean, onShakeOnChange: (Boolean) -> Unit, shakeDetected: Boolean
+)  {
+    // the Switch state now lives in MainActivity
     val activePhrase = "I need help" // word to be spoken
     val context = LocalContext.current // this is to open another screen
 
@@ -116,10 +143,7 @@ fun HomeScreen(x: Float, y: Float, z: Float, sensorAvailable: Boolean)  {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Shake detection")
-                Switch(
-                    checked = shakeOn.value,
-                    onCheckedChange = { shakeOn.value = it }// new on and off switch value is "it " and gets saved on shakeOn
-                )
+                Switch(checked = shakeOn, onCheckedChange = onShakeOnChange)
             }
             //Speak now button
             Button(onClick = { }) {
@@ -130,6 +154,9 @@ fun HomeScreen(x: Float, y: Float, z: Float, sensorAvailable: Boolean)  {
                 Text("x: ${"%.2f".format(x)}  y: ${"%.2f".format(y)}  z: ${"%.2f".format(z)}")
             } else {
                 Text("No accelerometer on this device")
+            }
+            if (shakeDetected) {
+                Text("Shake detected!")
             }
             //  Phrases  button
             Button(onClick = {
@@ -157,5 +184,5 @@ fun HomeScreen(x: Float, y: Float, z: Float, sensorAvailable: Boolean)  {
 @Preview(showBackground = true) // allows to show screen in the design view tab without the emulator
 @Composable
 fun HomeScreenPreview() {
-    HomeScreen(0f, 9.8f, 0f, true)
+    HomeScreen(0f, 9.8f, 0f, true, true, {}, false)
 }
