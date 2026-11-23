@@ -1,9 +1,11 @@
 package com.griffith.shakespeak
 
+import kotlin.math.sqrt
+import android.speech.tts.TextToSpeech
+import java.util.Locale
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import kotlin.math.sqrt
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -56,6 +58,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private var lastShakeTime = 0L
     private val shakeThreshold = 20f
     private val cooldownMs = 2000L
+    // text to speech (Step 3)
+    private var tts: TextToSpeech? = null
+    private var ttsReady = false
+    private val activePhrase = "I need help" // word to be spoken
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,10 +72,23 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             sensorAvailable.value = false
         }
 
+        // start the speech engine; the listener runs when it is ready
+        tts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = tts?.setLanguage(Locale.UK)
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.d("ShakeSpeak", "UK voice not available")
+                } else {
+                    ttsReady = true
+                }
+            }
+        }
+
         setContent {
             HomeScreen(
                 x.value, y.value, z.value, sensorAvailable.value,
-                shakeOn.value, { shakeOn.value = it }, shakeDetected.value
+                shakeOn.value, { shakeOn.value = it }, shakeDetected.value,
+                activePhrase, { speakPhrase() }
             )
         }
     }
@@ -86,6 +105,21 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         sensorManager.unregisterListener(this)
     }
 
+
+    // speaks the active phrase; QUEUE_FLUSH means a new phrase replaces any old one
+    private fun speakPhrase() {
+        if (ttsReady) {
+            tts?.speak(activePhrase, TextToSpeech.QUEUE_FLUSH, null, "shakespeak")
+        }
+    }
+
+    // free the speech engine when the screen is closed
+    override fun onDestroy() {
+        tts?.stop()
+        tts?.shutdown()
+        super.onDestroy()
+    }
+
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
             x.value = event.values[0]
@@ -100,6 +134,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             if (shakeOn.value && strength > shakeThreshold && now - lastShakeTime > cooldownMs) {
                 lastShakeTime = now
                 shakeDetected.value = true
+                speakPhrase()
                 // hide the message again after 1 second
                 Handler(Looper.getMainLooper()).postDelayed({ shakeDetected.value = false }, 1000)
             }
@@ -114,10 +149,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 @Composable
 fun HomeScreen(
     x: Float, y: Float, z: Float, sensorAvailable: Boolean,
-    shakeOn: Boolean, onShakeOnChange: (Boolean) -> Unit, shakeDetected: Boolean
+    shakeOn: Boolean, onShakeOnChange: (Boolean) -> Unit, shakeDetected: Boolean,
+    activePhrase: String, onSpeak: () -> Unit
 )  {
     // the Switch state now lives in MainActivity
-    val activePhrase = "I need help" // word to be spoken
     val context = LocalContext.current // this is to open another screen
 
     //background styling
@@ -146,7 +181,7 @@ fun HomeScreen(
                 Switch(checked = shakeOn, onCheckedChange = onShakeOnChange)
             }
             //Speak now button
-            Button(onClick = { }) {
+            Button(onClick = onSpeak) {
                 Text("Speak now")
             }
             // TEMP: remove later
@@ -184,5 +219,5 @@ fun HomeScreen(
 @Preview(showBackground = true) // allows to show screen in the design view tab without the emulator
 @Composable
 fun HomeScreenPreview() {
-    HomeScreen(0f, 9.8f, 0f, true, true, {}, false)
+    HomeScreen(0f, 9.8f, 0f, true, true, {}, false, "I need help", {})
 }
