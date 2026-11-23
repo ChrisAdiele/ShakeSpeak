@@ -1,5 +1,11 @@
 package com.griffith.shakespeak
 
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.util.Log
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -31,17 +37,57 @@ import androidx.compose.ui.unit.sp
 const val EXTRA_PHRASE = "phrase"
 
 //the class runs the home and says what to draw(this case the home screen )
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), SensorEventListener {
+
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+
+    private val x = mutableStateOf(0f)
+    private val y = mutableStateOf(0f)
+    private val z = mutableStateOf(0f)
+    private val sensorAvailable = mutableStateOf(true)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            HomeScreen()
+
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        if (accelerometer == null) {
+            sensorAvailable.value = false
         }
+
+        setContent {
+            HomeScreen(x.value, y.value, z.value, sensorAvailable.value)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        accelerometer?.let {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+            x.value = event.values[0]
+            y.value = event.values[1]
+            z.value = event.values[2]
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        Log.d("ShakeSpeak", "Accuracy: $accuracy")
     }
 }
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(x: Float, y: Float, z: Float, sensorAvailable: Boolean)  {
     //remember the on and off and redraws screen when its changed
     val shakeOn = remember { mutableStateOf(true) }
     val activePhrase = "I need help" // word to be spoken
@@ -79,6 +125,12 @@ fun HomeScreen() {
             Button(onClick = { }) {
                 Text("Speak now")
             }
+            // TEMP: remove later
+            if (sensorAvailable) {
+                Text("x: ${"%.2f".format(x)}  y: ${"%.2f".format(y)}  z: ${"%.2f".format(z)}")
+            } else {
+                Text("No accelerometer on this device")
+            }
             //  Phrases  button
             Button(onClick = {
                 //  explicit intent names the exact screen to open
@@ -105,5 +157,5 @@ fun HomeScreen() {
 @Preview(showBackground = true) // allows to show screen in the design view tab without the emulator
 @Composable
 fun HomeScreenPreview() {
-    HomeScreen()
+    HomeScreen(0f, 9.8f, 0f, true)
 }
