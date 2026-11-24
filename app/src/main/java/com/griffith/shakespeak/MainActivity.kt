@@ -1,5 +1,6 @@
 package com.griffith.shakespeak
 
+import com.griffith.shakespeak.ui.theme.ShakeSpeakTheme
 import kotlin.math.sqrt
 import android.speech.tts.TextToSpeech
 import java.util.Locale
@@ -86,11 +87,13 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         }
 
         setContent {
-            HomeScreen(
-                x.value, y.value, z.value, sensorAvailable.value,
-                shakeOn.value, { shakeOn.value = it }, shakeDetected.value,
-                activePhrase.value, { speakPhrase() }
-            )
+            ShakeSpeakTheme {
+                HomeScreen(
+                    x.value, y.value, z.value, sensorAvailable.value,
+                    shakeOn.value, { shakeOn.value = it }, shakeDetected.value,
+                    activePhrase.value, { speakPhrase() }
+                )
+            }
         }
     }
 
@@ -176,7 +179,7 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Text("ShakeSpeak", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            ScreenTitle("ShakeSpeak")
             Text("Active phrase:")
             Text("\"$activePhrase\"", fontSize = 24.sp)
 

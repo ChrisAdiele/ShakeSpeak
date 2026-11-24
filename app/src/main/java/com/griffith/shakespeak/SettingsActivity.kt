@@ -1,5 +1,6 @@
 package com.griffith.shakespeak
 
+import com.griffith.shakespeak.ui.theme.ShakeSpeakTheme
 import android.os.Bundle
 import android.content.Context
 import androidx.activity.ComponentActivity
@@ -32,8 +33,10 @@ class SettingsActivity : ComponentActivity() {
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val saved = prefs.getFloat("sensitivity", 5f) // read once, outside the composable
         setContent {
-            SettingsScreen(phrase, saved) { value ->
-                prefs.edit().putFloat("sensitivity", value).apply()
+            ShakeSpeakTheme {
+                SettingsScreen(phrase, saved) { value ->
+                    prefs.edit().putFloat("sensitivity", value).apply()
+                }
             }
         }
     }
@@ -53,7 +56,7 @@ fun SettingsScreen(phrase: String, savedSensitivity: Float, onSensitivitySaved: 
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Settings", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            ScreenTitle("Settings")
             Text("Current phrase: $phrase")
 
             HorizontalDivider()

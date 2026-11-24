@@ -1,5 +1,6 @@
 package com.griffith.shakespeak
 
+import com.griffith.shakespeak.ui.theme.ShakeSpeakTheme
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Alignment
 import android.content.ActivityNotFoundException
@@ -37,10 +38,12 @@ class PhrasesActivity : ComponentActivity() {
         //deals with null sends back 'no phrases'
         val phrase = intent.getStringExtra(EXTRA_PHRASE) ?: "No phrase"
         setContent {
-            PhrasesScreen(phrase) { chosen ->
-                // save the chosen phrase so Home can read it
-                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                    .edit().putString("active_phrase", chosen).apply()
+            ShakeSpeakTheme {
+                PhrasesScreen(phrase) { chosen ->
+                    // save the chosen phrase so Home can read it
+                    getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                        .edit().putString("active_phrase", chosen).apply()
+                }
             }
         }
     }
@@ -62,7 +65,7 @@ fun PhrasesScreen(phrase: String, onUsePhrase: (String) -> Unit) {
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Phrases", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            ScreenTitle("Phrases")
             Text("Current phrase: $phrase")
 
             //Text box
