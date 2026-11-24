@@ -1,6 +1,8 @@
 package com.griffith.shakespeak
 
 import com.griffith.shakespeak.ui.theme.ShakeSpeakTheme
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import android.os.Bundle
 import android.content.Context
 import androidx.activity.ComponentActivity
@@ -68,7 +70,8 @@ fun SettingsScreen(phrase: String, savedSensitivity: Float, onSensitivitySaved: 
                 onValueChange = { sensitivity.value = it },
                 onValueChangeFinished = { onSensitivitySaved(sensitivity.value) },
                 valueRange = 1f..10f,
-                steps = 8
+                steps = 8,
+                modifier = Modifier.semantics { contentDescription = "Shake sensitivity slider" }
             )
             //shows slider number and turns decimal to whole number
             Text("Value: ${sensitivity.value.toInt()}")
@@ -80,7 +83,8 @@ fun SettingsScreen(phrase: String, savedSensitivity: Float, onSensitivitySaved: 
                     checked = keepHistory.value,
                     onCheckedChange = {
                         keepHistory.value = it
-                    } //ticked = true and saved in keepHistory
+                    }, //ticked = true and saved in keepHistory
+                    modifier = Modifier.semantics { contentDescription = "Keep a history checkbox" }
                 )
                 Text("Keep a history")
             }

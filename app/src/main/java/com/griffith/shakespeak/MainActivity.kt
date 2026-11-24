@@ -1,6 +1,9 @@
 package com.griffith.shakespeak
 
 import com.griffith.shakespeak.ui.theme.ShakeSpeakTheme
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.layout.height
 import kotlin.math.sqrt
 import android.speech.tts.TextToSpeech
 import java.util.Locale
@@ -181,7 +184,7 @@ fun HomeScreen(
         ) {
             ScreenTitle("ShakeSpeak")
             Text("Active phrase:")
-            Text("\"$activePhrase\"", fontSize = 24.sp)
+            Text("\"$activePhrase\"", fontSize = 32.sp, fontWeight = FontWeight.Medium)
 
             //this puts the label and on and off switch side by side
             Row(
@@ -190,11 +193,20 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Shake detection")
-                Switch(checked = shakeOn, onCheckedChange = onShakeOnChange)
+                Switch(
+                    checked = shakeOn,
+                    onCheckedChange = onShakeOnChange,
+                    modifier = Modifier.semantics { contentDescription = "Shake detection switch" }
+                )
             }
             //Speak now button
-            Button(onClick = onSpeak) {
-                Text("Speak now")
+            Button(
+                onClick = onSpeak,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(72.dp)
+            ) {
+                Text("Speak now", fontSize = 24.sp)
             }
             // TEMP: remove later
             if (sensorAvailable) {

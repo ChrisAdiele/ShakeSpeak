@@ -1,6 +1,8 @@
 package com.griffith.shakespeak
 
 import com.griffith.shakespeak.ui.theme.ShakeSpeakTheme
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Alignment
 import android.content.ActivityNotFoundException
@@ -123,7 +125,7 @@ fun PhrasesScreen(phrase: String, onUsePhrase: (String) -> Unit) {
                     Button(onClick = {
                         onUsePhrase(item)
                         Toast.makeText(context, "Active phrase set", Toast.LENGTH_SHORT).show()
-                    }) {
+                    }, modifier = Modifier.semantics { contentDescription = "Use $item as the active phrase" }) {
                         Text("Use this phrase")
                     }
                 }
