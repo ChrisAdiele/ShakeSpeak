@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 // named the label on the envelope Phrases
 //home screen and other screens use the same name so phrases doesnt get lost
 const val EXTRA_PHRASE = "phrase"
+const val PREFS_NAME = "shakespeak_prefs"
 
 //the class runs the home and says what to draw(this case the home screen )
 class MainActivity : ComponentActivity(), SensorEventListener {
@@ -56,12 +57,12 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private val shakeOn = mutableStateOf(true)
     private val shakeDetected = mutableStateOf(false)
     private var lastShakeTime = 0L
-    private val shakeThreshold = 20f
+    private var shakeThreshold = 20f
     private val cooldownMs = 2000L
     // text to speech (Step 3)
     private var tts: TextToSpeech? = null
     private var ttsReady = false
-    private val activePhrase = "I need help" // word to be spoken
+    private val activePhrase = mutableStateOf("I need help") // word to be spoken
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,13 +89,21 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             HomeScreen(
                 x.value, y.value, z.value, sensorAvailable.value,
                 shakeOn.value, { shakeOn.value = it }, shakeDetected.value,
-                activePhrase, { speakPhrase() }
+                activePhrase.value, { speakPhrase() }
             )
         }
     }
 
     override fun onResume() {
         super.onResume()
+
+        // read the saved settings (defaults if nothing is saved yet)
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val sensitivity = prefs.getFloat("sensitivity", 5f)
+        // higher sensitivity = lower threshold (5 -> 20, 10 -> 12, 1 -> 26.4)
+        shakeThreshold = 28f - 1.6f * sensitivity
+        activePhrase.value = prefs.getString("active_phrase", "I need help") ?: "I need help"
+
         accelerometer?.let {
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
         }
@@ -109,7 +118,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     // speaks the active phrase; QUEUE_FLUSH means a new phrase replaces any old one
     private fun speakPhrase() {
         if (ttsReady) {
-            tts?.speak(activePhrase, TextToSpeech.QUEUE_FLUSH, null, "shakespeak")
+            tts?.speak(activePhrase.value, TextToSpeech.QUEUE_FLUSH, null, "shakespeak")
         }
     }
 

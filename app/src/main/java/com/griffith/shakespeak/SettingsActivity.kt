@@ -1,6 +1,7 @@
 package com.griffith.shakespeak
 
 import android.os.Bundle
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -28,16 +29,20 @@ class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val phrase = intent.getStringExtra(EXTRA_PHRASE) ?: "No phrase"
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val saved = prefs.getFloat("sensitivity", 5f) // read once, outside the composable
         setContent {
-            SettingsScreen(phrase)
+            SettingsScreen(phrase, saved) { value ->
+                prefs.edit().putFloat("sensitivity", value).apply()
+            }
         }
     }
 }
 
 @Composable
-fun SettingsScreen(phrase: String) {
+fun SettingsScreen(phrase: String, savedSensitivity: Float, onSensitivitySaved: (Float) -> Unit) {
     val sensitivity =
-        remember { mutableStateOf(5f) } //starts the slider at the middle and remebers where the slider it
+        remember { mutableStateOf(savedSensitivity) } //starts at the saved value and remembers where the slider is
     val keepHistory = remember { mutableStateOf(false) } //remebers if checkbox is checked
 
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -58,6 +63,7 @@ fun SettingsScreen(phrase: String) {
             Slider(
                 value = sensitivity.value,
                 onValueChange = { sensitivity.value = it },
+                onValueChangeFinished = { onSensitivitySaved(sensitivity.value) },
                 valueRange = 1f..10f,
                 steps = 8
             )
@@ -84,5 +90,5 @@ fun SettingsScreen(phrase: String) {
 @Preview(showBackground = true)
 @Composable
 fun SettingsScreenPreview() {
-    SettingsScreen("I need help")
+    SettingsScreen("I need help", 5f) {}
 }

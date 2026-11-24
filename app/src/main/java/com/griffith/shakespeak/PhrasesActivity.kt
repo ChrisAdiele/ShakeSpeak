@@ -1,5 +1,7 @@
 package com.griffith.shakespeak
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
@@ -35,13 +37,17 @@ class PhrasesActivity : ComponentActivity() {
         //deals with null sends back 'no phrases'
         val phrase = intent.getStringExtra(EXTRA_PHRASE) ?: "No phrase"
         setContent {
-            PhrasesScreen(phrase)
+            PhrasesScreen(phrase) { chosen ->
+                // save the chosen phrase so Home can read it
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                    .edit().putString("active_phrase", chosen).apply()
+            }
         }
     }
 }
 
 @Composable
-fun PhrasesScreen(phrase: String) {
+fun PhrasesScreen(phrase: String, onUsePhrase: (String) -> Unit) {
     val typedText = remember { mutableStateOf("") } //for remebering what the user is typing
 
     val phrases = remember { mutableStateListOf("I need help") } //the list of phrases
@@ -69,8 +75,15 @@ fun PhrasesScreen(phrase: String) {
 
             //Add button
             Button(onClick = {
-                if (typedText.value.isNotBlank()) { //only adds if something is typed
-                    phrases.add(typedText.value.trim())//adds and removes any extra space at the end
+                val text = typedText.value.trim() //removes extra spaces at the start and end
+                if (text.isEmpty()) {
+                    // validation: reject empty input
+                    Toast.makeText(context, "Type a phrase first", Toast.LENGTH_SHORT).show()
+                } else if (text.length > 100) {
+                    // validation: reject very long input
+                    Toast.makeText(context, "Phrase is too long (max 100)", Toast.LENGTH_SHORT).show()
+                } else {
+                    phrases.add(text)
                     typedText.value = "" //clears the box after adding
                 }
             }) {
@@ -97,8 +110,20 @@ fun PhrasesScreen(phrase: String) {
             //divider between sections
             HorizontalDivider()
 
-            for (item in phrases) { //a line of text for every phrase
-                Text("- $item")
+            for (item in phrases) { //a line for every phrase, with a button to use it
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("- $item")
+                    Button(onClick = {
+                        onUsePhrase(item)
+                        Toast.makeText(context, "Active phrase set", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Text("Use this phrase")
+                    }
+                }
             }
         }
     }
@@ -107,5 +132,5 @@ fun PhrasesScreen(phrase: String) {
 @Preview(showBackground = true)
 @Composable
 fun PhrasesScreenPreview() {
-    PhrasesScreen("I need help")
+    PhrasesScreen("I need help") {}
 }
