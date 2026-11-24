@@ -42,7 +42,7 @@ class PhrasesActivity : ComponentActivity() {
         setContent {
             ShakeSpeakTheme {
                 PhrasesScreen(phrase) { chosen ->
-                    // save the chosen phrase so Home can read it
+                    // Save the chosen phrase in the notebook under "active_phrase", because Home reads it in onResume.
                     getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                         .edit().putString("active_phrase", chosen).apply()
                 }
@@ -80,16 +80,16 @@ fun PhrasesScreen(phrase: String, onUsePhrase: (String) -> Unit) {
 
             //Add button
             Button(onClick = {
-                val text = typedText.value.trim() //removes extra spaces at the start and end
+                val text = typedText.value.trim() // Remove extra spaces at the start and end, so a phrase of only spaces counts as empty.
+                // Reject an empty or too long phrase with a short message, because bad input should never be saved.
                 if (text.isEmpty()) {
-                    // validation: reject empty input
                     Toast.makeText(context, "Type a phrase first", Toast.LENGTH_SHORT).show()
                 } else if (text.length > 100) {
-                    // validation: reject very long input
                     Toast.makeText(context, "Phrase is too long (max 100)", Toast.LENGTH_SHORT).show()
                 } else {
+                    // Only a valid phrase is added to the list, and then the box is cleared.
                     phrases.add(text)
-                    typedText.value = "" //clears the box after adding
+                    typedText.value = ""
                 }
             }) {
                 Text("Add phrase")
@@ -115,14 +115,17 @@ fun PhrasesScreen(phrase: String, onUsePhrase: (String) -> Unit) {
             //divider between sections
             HorizontalDivider()
 
-            for (item in phrases) { //a line for every phrase, with a button to use it
+            for (item in phrases) {
+                // Make one row for every phrase, with the text on the left and a button on the right.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("- $item")
+                    // The label for screen readers includes the phrase, so each button sounds different.
                     Button(onClick = {
+                        // Tapping the button saves this phrase as the active one and shows a short message.
                         onUsePhrase(item)
                         Toast.makeText(context, "Active phrase set", Toast.LENGTH_SHORT).show()
                     }, modifier = Modifier.semantics { contentDescription = "Use $item as the active phrase" }) {

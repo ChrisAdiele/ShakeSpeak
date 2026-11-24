@@ -42,46 +42,57 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// named the label on the envelope Phrases
-//home screen and other screens use the same name so phrases doesnt get lost
+// EXTRA_PHRASE is the label on the envelope, because the other screen uses it to find the phrase.
+// PREFS_NAME is the name of the notebook, because all three screens must use the same name.
 const val EXTRA_PHRASE = "phrase"
 const val PREFS_NAME = "shakespeak_prefs"
 
-//the class runs the home and says what to draw(this case the home screen )
+// MainActivity is the home screen, and it listens to the sensor and speaks the phrase, because it owns the state.
 class MainActivity : ComponentActivity(), SensorEventListener {
 
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
 
+    // x, y and z hold the sensor readings, because the screen redraws when they change.
     private val x = mutableStateOf(0f)
     private val y = mutableStateOf(0f)
     private val z = mutableStateOf(0f)
+    // sensorAvailable is true if the phone has an accelerometer, because otherwise the app shows a message.
     private val sensorAvailable = mutableStateOf(true)
-    // shake settings and state (Step 2)
+    // shakeOn is true when the switch is on, because shakes are ignored when it is off.
     private val shakeOn = mutableStateOf(true)
     private val shakeDetected = mutableStateOf(false)
     private var lastShakeTime = 0L
+    // shakeThreshold is how hard a shake must be, and it is a var because the slider changes it.
     private var shakeThreshold = 20f
+    // cooldownMs is how long to wait between shakes, because one shake should not speak many times.
     private val cooldownMs = 2000L
-    // text to speech (Step 3)
+    // tts is the speech engine, and it starts out empty because it is created later.
     private var tts: TextToSpeech? = null
+    // ttsReady is true when the engine is ready, because speaking too early does nothing
     private var ttsReady = false
-    private val activePhrase = mutableStateOf("I need help") // word to be spoken
+    // activePhrase is the phrase to say, and it is state so the screen updates when it changes.
+    private val activePhrase = mutableStateOf("I need help")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Ask Android for the sensor manager, because it is the way to reach the phone's sensors.
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        // Get the accelerometer from the manager, because it measures how the phone is moving.
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        // If the phone has none, set sensorAvailable to false, because the screen then shows a message instead of numbers.
         if (accelerometer == null) {
             sensorAvailable.value = false
         }
 
-        // start the speech engine; the listener runs when it is ready
+        // Start the speech engine, and Android runs this code when it has finished starting.
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
+                // Set the voice to UK English, and only mark the engine ready if the voice is available.
                 val result = tts?.setLanguage(Locale.UK)
                 if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    // If the voice is missing, write a note in the log instead of crashing.
                     Log.d("ShakeSpeak", "UK voice not available")
                 } else {
                     ttsReady = true
@@ -90,7 +101,9 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         }
 
         setContent {
+            // Draw the Home screen inside the theme, so every screen shares the same colours.
             ShakeSpeakTheme {
+                // Pass in the current values and two actions, because the activity owns the state and the screen only shows it.
                 HomeScreen(
                     x.value, y.value, z.value, sensorAvailable.value,
                     shakeOn.value, { shakeOn.value = it }, shakeDetected.value,
@@ -103,32 +116,38 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
 
-        // read the saved settings (defaults if nothing is saved yet)
+        // Read the saved settings here, because onResume runs every time the screen comes back, so changes are picked up.
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val sensitivity = prefs.getFloat("sensitivity", 5f)
-        // higher sensitivity = lower threshold (5 -> 20, 10 -> 12, 1 -> 26.4)
+        // Higher sensitivity makes the threshold lower, so a lighter shake counts.
         shakeThreshold = 28f - 1.6f * sensitivity
+        // Read the saved phrase, and use "I need help" if nothing is saved yet.
         activePhrase.value = prefs.getString("active_phrase", "I need help") ?: "I need help"
 
+        // Listen only if the sensor exists, because not every phone has one.
         accelerometer?.let {
+            // Use a medium speed, because a shake does not need fast readings and it saves battery.
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
         }
     }
 
     override fun onPause() {
         super.onPause()
+        // Stop listening when the user leaves the screen, so the sensor stops using power.
         sensorManager.unregisterListener(this)
     }
 
 
-    // speaks the active phrase; QUEUE_FLUSH means a new phrase replaces any old one
+
     private fun speakPhrase() {
+        // Speak the active phrase, but only if the engine is ready, otherwise nothing is said.
         if (ttsReady) {
+            // QUEUE_FLUSH drops anything waiting and says the new phrase now.
             tts?.speak(activePhrase.value, TextToSpeech.QUEUE_FLUSH, null, "shakespeak")
         }
     }
 
-    // free the speech engine when the screen is closed
+    // When the screen is closed, stop the speech and free the engine, so it does not keep using memory.
     override fun onDestroy() {
         tts?.stop()
         tts?.shutdown()
@@ -136,21 +155,24 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
+        // Android calls this for every new reading, and we only use it if it came from the accelerometer.
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
             x.value = event.values[0]
             y.value = event.values[1]
             z.value = event.values[2]
 
-            // strength = how hard the phone is being pushed (gravity included)
+            // Strength is one number for how hard the phone is pushed, and it is about 9.8 at rest because of gravity.
             val strength = sqrt(x.value * x.value + y.value * y.value + z.value * z.value)
+            // Get the time since the phone started, so the cooldown can measure the gap between shakes.
             val now = SystemClock.elapsedRealtime()
 
-            // shake only counts if: strong enough, cooldown over, and switch is ON
+            // The shake only counts if all three checks are true: switch on, strong enough, cooldown over.
             if (shakeOn.value && strength > shakeThreshold && now - lastShakeTime > cooldownMs) {
+                // Save the time of this shake, so the cooldown can start counting.
                 lastShakeTime = now
                 shakeDetected.value = true
                 speakPhrase()
-                // hide the message again after 1 second
+                // After 1 second, hide the message again, without freezing the screen.
                 Handler(Looper.getMainLooper()).postDelayed({ shakeDetected.value = false }, 1000)
             }
         }
@@ -208,7 +230,7 @@ fun HomeScreen(
             ) {
                 Text("Speak now", fontSize = 24.sp)
             }
-            // TEMP: remove later
+            // live sensor readout (shows the accelerometer working)
             if (sensorAvailable) {
                 Text("x: ${"%.2f".format(x)}  y: ${"%.2f".format(y)}  z: ${"%.2f".format(z)}")
             } else {

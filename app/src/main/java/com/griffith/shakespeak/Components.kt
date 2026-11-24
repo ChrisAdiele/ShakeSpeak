@@ -11,12 +11,15 @@ import androidx.compose.ui.unit.sp
 
 // one title used on all three screens (reuse composables, Lecture 11)
 @Composable
+// ScreenTitle is one reusable composable used on all three screens, so the titles look the same.
 fun ScreenTitle(text: String) {
     Text(
         text = text,
         fontSize = 32.sp,
         fontWeight = FontWeight.Bold,
+        // Take the colour from the theme, so the title changes when the theme changes.
         color = MaterialTheme.colorScheme.primary,
+        // Mark the text as a heading, so screen readers announce it as a title.
         modifier = Modifier.semantics { heading() } // tells screen readers this is a heading
     )
 }

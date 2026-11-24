@@ -32,11 +32,14 @@ class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val phrase = intent.getStringExtra(EXTRA_PHRASE) ?: "No phrase"
+        // Open the notebook where the settings are saved.
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        val saved = prefs.getFloat("sensitivity", 5f) // read once, outside the composable
+        // Read the saved sensitivity once, before the screen is drawn, because reading storage should not happen inside a composable.
+        val saved = prefs.getFloat("sensitivity", 5f)
         setContent {
             ShakeSpeakTheme {
                 SettingsScreen(phrase, saved) { value ->
+                    // When the screen gives a new value,write it in the notebook with edit, putFloat and apply.
                     prefs.edit().putFloat("sensitivity", value).apply()
                 }
             }
@@ -91,8 +94,7 @@ fun SettingsScreen(phrase: String, savedSensitivity: Float, onSensitivitySaved: 
         }
     }
 }
-//In Milestone 2 slider will connect to shake sensor
-//controls dont do anything yet
+
 //In Milestone 3 'Keep a history' will use saved data
 @Preview(showBackground = true)
 @Composable
